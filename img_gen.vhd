@@ -51,7 +51,7 @@ architecture Behavioral of img_gen is
 	constant x_v,y_v:integer:=3;-- horizontal and vertical speeds of the ball 
 	signal ball_on:std_logic;
 	signal rgb_ball:std_logic_vector(2 downto 0);
-	signal shoot: std_LOGIC;
+	signal shoot: integer :=0;
 	signal count: std_LOGIC :='0'; -- for the shooting button
 	signal count_next : std_LOGIC :='0';
 	
@@ -212,17 +212,33 @@ begin
 		if refresh_tick= '1' then
 			bps<=bar_l+15;
 			
+			
+--				while ball_t > 100 loop
+--					ball_t_next <=ball_t-yv_reg; 
+--					end loop;
+--			ball_t_next<=bar_t-20;
+--			ball_l_next<=bps;
+--			end if;
 			if result_buff = '1' then
+				shoot <= 1;
+			--else 
+				--shoot<= 0;
+			end if;
+
+			--if result_buff = '1' then
+			if shoot = 1 then
 				if ball_t < bar_t - 350 or (ball_t < ast_t and (ball_l>ast_l and ball_l<ast_l+ast_u)) then --comment this para 
 					ball_t_next<=bar_t-20;                                                                  --and uncomment following one		
-					ball_l_next<=bps;                                                                       --for using button to shoot
+					ball_l_next<=bps;
+					shoot <=0; 																												--for using button to shoot
 					else                                                                                    --   
 					ball_t_next <=ball_t-yv_reg;                                                            --			
 				end if;
 			else
 				ball_t_next<=bar_t-20;
 				ball_l_next<=bps; 
-			end if;			
+			end if;
+					
 					
 --				if count_next='1' then
 --					if ball_t < bar_t - 350 then
