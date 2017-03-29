@@ -4,6 +4,8 @@ use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity img_gen is
+GENERIC(
+    counter_size  :  INTEGER := 19); --counter size (19 bits gives 10.5ms with 50MHz clock)
 	Port ( clk         : in  STD_LOGIC;
 			 x_control   : in  STD_LOGIC_VECTOR(9 downto 0);
 			 button_l    : in STD_LOGIC;
@@ -11,7 +13,9 @@ entity img_gen is
 			 y_control   : in STD_LOGIC_VECTOR(9 downto 0);
 			 video_on    : in  STD_LOGIC;
 			 rgb         : out  STD_LOGIC_VECTOR(2 downto 0);
-			 bullet      : in std_LOGIC );
+			 button      : in std_LOGIC ); --input signal to be debounced
+			--result  : OUT STD_LOGIC); --debounced signal 
+			 
 end img_gen;
 
 architecture Behavioral of img_gen is
@@ -31,6 +35,12 @@ architecture Behavioral of img_gen is
 	constant bar_v:integer:=5;--velocity of the bar
 	signal bar_on:std_logic;
 	signal rgb_bar:std_logic_vector(2 downto 0); 
+	
+	--debouncing
+  SIGNAL flipflops   : STD_LOGIC_VECTOR(1 DOWNTO 0); --input flip flops
+  SIGNAL counter_set : STD_LOGIC;                    --sync reset to zero
+  SIGNAL counter_out : STD_LOGIC_VECTOR(counter_size DOWNTO 0) := (OTHERS => '0'); --counter output
+  SIGNAL result_buff : std_LOGIC;
 	
 	
 	--bullet
@@ -168,13 +178,31 @@ begin
 		end if;
 	end process;
 	
+	-- debouncing
+	counter_set <= flipflops(0) xor flipflops(1);   --determine when to start/reset counter
+	
+  PROCESS(clk)
+  BEGIN
+    IF(clk'EVENT and clk = '1') THEN
+      flipflops(0) <= button;
+      flipflops(1) <= flipflops(0);
+      If(counter_set = '1') THEN                  --reset counter because input is changing
+        counter_out <= (OTHERS => '0');
+      ELSIF(counter_out(counter_size) = '0') THEN --stable input time is not yet met
+        counter_out <= counter_out + 1;
+      ELSE                                        --stable input time is met
+        result_buff <= flipflops(1);
+      END IF;    
+    END IF;
+  END PROCESS;
+	
 	--bullet animation
 	process(refresh_tick,ball_l,ball_t,yv_reg)
 	begin
 		ball_l_next <=ball_l;
 		ball_t_next <=ball_t;
 		yv_next<=yv_reg;
-		count_next <= count;
+		--count_next <= count;
 		
 		--if bullet = '1' then
 					--wait for 1 ms ;
@@ -183,14 +211,19 @@ begin
 				
 		if refresh_tick= '1' then
 			bps<=bar_l+15;
-			if ball_t < bar_t - 350 or (ball_t < ast_t and (ball_l>ast_l and ball_l<ast_l+ast_u)) then --comment this para 
-				ball_t_next<=bar_t-20;                                                                  --and uncomment following one		
-				ball_l_next<=bps;                                                                       --for using button to shoot
-				else                                                                                    --   
-				ball_t_next <=ball_t-yv_reg;                                                            --			
-			end if;                                                                                    --   
 			
-				
+			if result_buff = '1' then
+				if ball_t < bar_t - 350 or (ball_t < ast_t and (ball_l>ast_l and ball_l<ast_l+ast_u)) then --comment this para 
+					ball_t_next<=bar_t-20;                                                                  --and uncomment following one		
+					ball_l_next<=bps;                                                                       --for using button to shoot
+					else                                                                                    --   
+					ball_t_next <=ball_t-yv_reg;                                                            --			
+				end if;
+			else
+				ball_t_next<=bar_t-20;
+				ball_l_next<=bps; 
+			end if;			
+					
 --				if count_next='1' then
 --					if ball_t < bar_t - 350 then
 --						count_next<='0';

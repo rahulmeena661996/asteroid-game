@@ -12,7 +12,8 @@ entity vga_control is
                 rgb            : out  STD_LOGIC_VECTOR (2 downto 0);
                 h_s           : out  STD_LOGIC;
                 v_s            : out  STD_LOGIC;
-					 bullet        : in std_LOGIC);
+					 button        : in std_LOGIC);
+					-- result  : OUT STD_LOGIC);
       end vga_control;
 
 architecture Behavioral of vga_control is
@@ -25,7 +26,8 @@ COMPONENT img_gen
                  y_control     : IN std_logic_vector(9 downto 0);
                  video_on   : IN std_logic;          
                 rgb              : OUT std_logic_vector(2 downto 0);
-					 bullet      : in std_LOGIC );
+					 button      : in std_LOGIC) ;
+					 --result  : OUT STD_LOGIC);
   END COMPONENT;
 
 COMPONENT sync_mod
@@ -43,7 +45,7 @@ signal x,y:std_logic_vector(9 downto 0);
 signal video:std_logic;
 
 begin
- U1: img_gen PORT MAP( clk =>clk ,  x_control => x, button_l =>not button_l  , button_r => not button_r, y_control => y,video_on =>video , rgb => rgb ,bullet => bullet);
+ U1: img_gen PORT MAP( clk =>clk ,  x_control => x, button_l =>not button_l  , button_r => not button_r, y_control => y,video_on =>video , rgb => rgb ,button => button);--, result => result);
 
  U2: sync_mod PORT MAP( clk => clk, reset => '0', start => '1', y_control => y, x_control =>x , h_s => h_s ,v_s => v_s, video_on =>video );
  --put a switch at start and not of push button at reset OR a using a single switch, reset<= not start_switch , start<= start_switch (debouncing not required)
